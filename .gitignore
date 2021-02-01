@@ -33,3 +33,6 @@ keys.txt
 .env
 venv
 .idea
+
+keys.txt
+layouts.py
