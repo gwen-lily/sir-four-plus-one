@@ -1,4 +1,4 @@
-# bot.py
+# cox_layout_bot.py
 import discord
 import os
 import pathlib
@@ -93,7 +93,7 @@ async def rot(ctx, bosses, rooms):
 
 		if rooms == 'fscc':
 			if 'vespula' in [boss3]:
-				await ctx.send(no_zgs_needed)
+				await ctx.send(vespula_bad_entry)   # improperly gave a no-zgs-needed message previously
 				special = True
 
 			await ctx.send(boulder)
