@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
-ALLOWED_CONVENTIONAL_LETTERS = [
+# typical letters used to denote CoX boss rooms
+CONVENTIONAL_LETTERS = [
 	't',
 	'v',
 	'g',
@@ -8,36 +9,61 @@ ALLOWED_CONVENTIONAL_LETTERS = [
 	's',
 ]
 
-ROTATION_ONE = 'tvgmsmvv'
-ROTATION_TWO = 'tmgvsvvm'
+# proposed letters used to denote CoX boss rooms
+IDIOSYNCRATIC_LETTERS_DICT = {
+	't': 'tekton',
+	'v': 'vasa',
+	'g': 'guardians',
+	'y': 'mystics',
+	's': 'shamans',
+	'm': 'muttadiles',
+	'n': 'vanguards',
+	'e': 'vespula'
+}
+
+IDIOSYNCRATIC_LETTERS = list(IDIOSYNCRATIC_LETTERS_DICT.keys())
+
+
+def is_idiosyncratic(s: str) -> bool:
+	"""Returns true if a shortcode unamibuously makes use of the idiosyncratic short codes"""
+	identifier_letters = set(IDIOSYNCRATIC_LETTERS) - set(CONVENTIONAL_LETTERS)
+	return any(il in s for il in identifier_letters)
+
+
+def idiosyncratic_to_conventional_shortcode(s: str) -> str:
+	s_prime = [IDIOSYNCRATIC_LETTERS_DICT[ch][0:1] for ch in s]
+	return ''.join(s_prime)
+
+
+ROTATION_ONE = 'tvgysmne'
+ROTATION_TWO = 'tmgesvny'
 FULL_ROTATIONS = [ROTATION_ONE, ROTATION_TWO]
 
-ROTATION_ONE_LONG = [
-	'tekton',
-	'vasa',
-	'guardians',
-	'mystics',
-	'shamans',
-	'muttadiles',
-	'vanguards',
-	'vespula'
-]
-
-ROTATION_TWO_LONG = [
-	'tekton',
-	'muttadiles',
-	'guardians',
-	'vespula',
-	'shamans',
-	'vasa',
-	'vanguards',
-	'mystics'
-]
+ROTATION_ONE_LONG = [IDIOSYNCRATIC_LETTERS_DICT[ch] for ch in ROTATION_ONE]
+ROTATION_TWO_LONG = [IDIOSYNCRATIC_LETTERS_DICT[ch] for ch in ROTATION_TWO]
 
 FULL_ROTATIONS_LONG = {
 	ROTATION_ONE: ROTATION_ONE_LONG,
+	idiosyncratic_to_conventional_shortcode(ROTATION_ONE): ROTATION_ONE_LONG,
 	ROTATION_TWO: ROTATION_TWO_LONG,
+	idiosyncratic_to_conventional_shortcode(ROTATION_TWO): ROTATION_TWO_LONG
 }
+
+
+def is_valid_rotation(rot: str) -> bool:
+	"""Only works with idiosyncratic definition, really simple function"""
+
+	assert is_idiosyncratic(rot) or True    # TODO: Catch rots that don't double up but don't contain identifier char
+
+	for rotation in FULL_ROTATIONS:
+
+		rotation_wrapped = ''.join(rotation * 3)
+		rotation_wrapped_reverse = rotation_wrapped[::-1]
+
+		if rot in rotation_wrapped or rot in rotation_wrapped_reverse:
+			return True
+
+	return False
 
 
 def walk_rotation(rotation: str, start: int, length: int, reverse: bool = False) -> Tuple[str, List[str]]:
@@ -73,23 +99,27 @@ def find_all_char_indices(s: str, ch: str) -> List[int]:
 
 
 def boss_rotation_shortcode_decoder(rot: str):
-
-	# sanitize input
-	# chars = [c for c in rot.replace("\'", '')[::-1]] if "\'" in rot else [c for c in rot]
 	chars = [c for c in rot]
 	bosses = len(chars)
-
-	assert all(c in ALLOWED_CONVENTIONAL_LETTERS for c in chars)
-	assert 3 <= bosses <= 5
-
 	possible_rotations = []
 
+	assert 3 <= bosses <= 5
+	assert all(c in CONVENTIONAL_LETTERS for c in chars) or all(c in IDIOSYNCRATIC_LETTERS for c in chars)
+
+	# Return unambiguous validated rotation if the input matches these conditions
+	if is_idiosyncratic(rot) and is_valid_rotation(rot):
+		possible_rotations.append([IDIOSYNCRATIC_LETTERS_DICT[ch] for ch in rot])
+		return possible_rotations
+
+	# Else, work with ambiguity, and at this point it must be conventional otherwise the input was wrong
+
 	for full_rotation in FULL_ROTATIONS:
-		possible_starting_rooms = find_all_char_indices(full_rotation, chars[0])
+		conventional_rotation = idiosyncratic_to_conventional_shortcode(full_rotation)
+		possible_starting_rooms = find_all_char_indices(conventional_rotation, chars[0])
 
 		for sr in possible_starting_rooms:
 			for direction in [False, True]:
-				scout_short, scout_long = walk_rotation(full_rotation, sr, bosses, direction)
+				scout_short, scout_long = walk_rotation(conventional_rotation, sr, bosses, direction)
 
 				if rot == scout_short:
 					possible_rotations.append(scout_long)
@@ -98,4 +128,8 @@ def boss_rotation_shortcode_decoder(rot: str):
 
 
 if __name__ == '__main__':
-	print(boss_rotation_shortcode_decoder('mtmgv'))
+	# print(boss_rotation_shortcode_decoder('mtmgv'))
+	inp = 'vsvs'
+
+	print(idiosyncratic_to_conventional_shortcode(inp))
+	print(boss_rotation_shortcode_decoder(inp))

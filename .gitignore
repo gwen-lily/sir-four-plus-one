@@ -38,3 +38,5 @@ keys.txt
 layouts.py
 room_pictures_unaligned
 LL
+__pycache__
+emojis
